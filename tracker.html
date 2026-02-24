@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<title>Tracker</title>
+<style>
+/* Theme: Midnight (default) */
+:root, [data-theme="midnight"] {
+  --bg: #090e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #253047;
+  --text: #e2e8f0;
+  --text2: #7388a9;
+  --text3: #3b4f6b;
+  --accent: #6390f0;
+  --accent-dim: rgba(99, 144, 240, 0.12);
+  --danger: #f87171;
+  --danger-dim: rgba(248, 113, 113, 0.1);
+}
+
+/* Theme: Dawn */
+[data-theme="dawn"] {
+  --bg: #faf6f1;
+  --surface: #ffffff;
+  --surface2: #f0ebe4;
+  --border: #e0d8ce;
+  --text: #2c2520;
+  --text2: #8c7e72;
+  --text3: #c4b8ab;
+  --accent: #eab308;
+  --accent-dim: rgba(234, 179, 8, 0.12);
+  --danger: #d94f4f;
+  --danger-dim: rgba(217, 79, 79, 0.1);
+}
+
+/* Theme: Ocean */
+[data-theme="ocean"] {
+  --bg: #0b1628;
+  --surface: #112240;
+  --surface2: #1a2f52;
+  --border: #243b63;
+  --text: #cdd9e5;
+  --text2: #6b8299;
+  --text3: #3a5068;
+  --accent: #5ccfcf;
+  --accent-dim: rgba(92, 207, 207, 0.12);
+  --danger: #f87171;
+  --danger-dim: rgba(248, 113, 113, 0.1);
+}
+
+/* Theme: Forest */
+[data-theme="forest"] {
+  --bg: #0c1410;
+  --surface: #142018;
+  --surface2: #1b2b21;
+  --border: #26392d;
+  --text: #d0ddd5;
+  --text2: #6e9a7a;
+  --text3: #3a5e45;
+  --accent: #4ade80;
+  --accent-dim: rgba(74, 222, 128, 0.12);
+  --danger: #cf6b5e;
+  --danger-dim: rgba(207, 107, 94, 0.1);
+}
+
+/* Theme: Lavender */
+[data-theme="lavender"] {
+  --bg: #f4f0f7;
+  --surface: #ffffff;
+  --surface2: #ece6f2;
+  --border: #d8cfe2;
+  --text: #2a2435;
+  --text2: #857a94;
+  --text3: #bfb3cc;
+  --accent: #8b5cf6;
+  --accent-dim: rgba(139, 92, 246, 0.1);
+  --danger: #e05577;
+  --danger-dim: rgba(224, 85, 119, 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px 120px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 56px 0 20px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 22px;
+  transition: transform 0.1s;
+  line-height: 1; font-family: inherit;
+}
+.icon-btn:active { transform: scale(0.92); }
+
+/* Back button */
+.back-btn {
+  background: none; border: none;
+  color: var(--accent);
+  font-size: 16px; font-weight: 500;
+  cursor: pointer; padding: 4px 0;
+  font-family: inherit;
+  display: flex; align-items: center; gap: 4px;
+}
+.back-btn:active { opacity: 0.6; }
+
+/* Activity card */
+.activity-card {
+  background: var(--surface);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.activity-card-top {
+  padding: 16px 16px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.activity-card-top:active { opacity: 0.7; }
+
+.activity-name { font-size: 16px; font-weight: 600; }
+
+.activity-goal-badge {
+  font-size: 12px; font-weight: 600;
+  color: var(--text2);
+  background: var(--surface2);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.activity-goal-badge.met {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.activity-arrow { color: var(--text3); font-size: 18px; }
+
+/* Circles row */
+.circles-row {
+  display: flex;
+  padding: 12px 16px 16px;
+}
+
+.circle-day {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  flex: 1;
+}
+
+.circle-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.circle-label.is-today { color: var(--accent); }
+
+.circle {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.circle:active { transform: scale(0.88); }
+.circle.partial {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+.circle.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0a0a;
+  font-size: 13px;
+  font-weight: 700;
+}
+.circle.future {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* Detail screen */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 56px 0 8px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.detail-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  padding: 8px 0 4px;
+}
+
+.detail-subtitle {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 24px;
+}
+.detail-subtitle .met { color: var(--accent); }
+
+/* Hamburger menu */
+.menu-wrap { position: relative; }
+
+.hamburger-btn {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 20px;
+  font-family: inherit;
+  letter-spacing: 2px;
+}
+.hamburger-btn:active { background: var(--surface2); }
+
+/* Dropdown rendered as fixed overlay to avoid stacking context issues */
+.dropdown-overlay {
+  position: fixed; inset: 0;
+  z-index: 200;
+}
+
+.dropdown-menu {
+  position: fixed;
+  top: 100px; right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 160px;
+  overflow: hidden;
+  z-index: 201;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: menuIn 0.12s ease;
+}
+@keyframes menuIn { from { opacity: 0; transform: scale(0.95) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.dropdown-item {
+  display: block; width: 100%;
+  padding: 14px 18px;
+  background: none; border: none;
+  color: var(--text);
+  font-size: 15px; font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 1px solid var(--border);
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:active { background: var(--surface2); }
+.dropdown-item.danger { color: var(--danger); }
+
+/* Confirm modal */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  padding: 24px;
+}
+.confirm-box {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%; max-width: 320px;
+  text-align: center;
+}
+.confirm-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.confirm-box p { font-size: 14px; color: var(--text2); margin-bottom: 20px; line-height: 1.4; }
+.confirm-btns { display: flex; gap: 10px; }
+.confirm-btns .btn { font-size: 15px; padding: 12px; }
+
+/* Month nav */
+.month-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.month-nav span { font-size: 15px; color: var(--text); font-weight: 600; }
+
+.nav-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+  font-family: inherit;
+}
+.nav-btn:active { background: var(--surface2); }
+.nav-btn.disabled {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* Month calendar — fixed cell sizes */
+.cal-day-labels {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.cal-day-labels span {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-align: center; text-transform: uppercase;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 40px;
+  gap: 0;
+  justify-items: center;
+  align-items: center;
+}
+
+.cal-cell {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500;
+  color: var(--text2);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  padding: 0;
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.cal-cell:active { transform: scale(0.88); }
+.cal-cell.partial {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.cal-cell.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0a0a;
+  font-weight: 700;
+}
+.cal-cell.today { border-color: var(--accent); }
+.cal-cell.empty {
+  border: none; cursor: default;
+  width: 38px; height: 38px;
+}
+.cal-cell.future {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* Stats */
+.cal-stats {
+  display: flex; gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.cal-stat {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+}
+.cal-stat-value { font-size: 20px; font-weight: 700; }
+.cal-stat-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text2);
+}
+.empty h3 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+.empty p { font-size: 14px; line-height: 1.5; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.modal-overlay.visible { opacity: 1; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 28px 24px calc(28px + env(safe-area-inset-bottom));
+  width: 100%; max-width: 480px;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.visible .modal { transform: translateY(0); }
+
+.modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+
+.field-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--text2);
+  display: block; margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.field-input {
+  width: 100%; padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  margin-bottom: 20px;
+  outline: none;
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--accent); }
+
+.modal-btns { display: flex; gap: 10px; }
+
+.btn {
+  flex: 1; padding: 14px;
+  border-radius: 12px; border: none;
+  font-size: 16px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #0a0a0a; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger {
+  background: var(--danger-dim); color: var(--danger);
+  border: none; margin-top: 10px; width: 100%;
+  padding: 14px; border-radius: 12px;
+  font-size: 16px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+
+/* Drag to reorder */
+.activity-card-top {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.activity-card.dragging {
+  position: fixed;
+  left: 0;
+  right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px;
+  opacity: 0.95;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.drag-placeholder {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  background: transparent;
+}
+
+body.drag-active {
+  overflow: hidden;
+  touch-action: none;
+}
+
+.activity-list {
+  position: relative;
+}
+
+/* Settings / Theme picker */
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.theme-option.active {
+  border-color: var(--accent);
+}
+
+.theme-swatch {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.theme-swatch-half {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50%;
+}
+.theme-swatch-half:first-child { left: 0; }
+.theme-swatch-half:last-child { right: 0; }
+
+.theme-info {
+  flex: 1; min-width: 0;
+}
+.theme-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.theme-desc {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Screen transitions — only on navigate, not toggles */
+.screen-enter { animation: slideIn 0.2s ease; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+.screen-back { animation: slideBack 0.2s ease; }
+@keyframes slideBack { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ── Data ────────────────────────────
+const DAYS = ['S','M','T','W','T','F','S'];
+const STORAGE_KEY = 'tracker_v4';
+
+const THEMES = [
+  {id: 'midnight', name: 'Midnight', desc: 'Dark navy blues',       bg: '#090e1a', accent: '#6390f0'},
+  {id: 'dawn',     name: 'Dawn',     desc: 'Warm and light',       bg: '#faf6f1', accent: '#eab308'},
+  {id: 'ocean',    name: 'Ocean',    desc: 'Deep sea teals',       bg: '#0b1628', accent: '#5ccfcf'},
+  {id: 'forest',   name: 'Forest',   desc: 'Dark and verdant',     bg: '#0c1410', accent: '#4ade80'},
+  {id: 'lavender', name: 'Lavender', desc: 'Soft and calm',        bg: '#f4f0f7', accent: '#8b5cf6'},
+];
+
+let state = {
+  activities: [],
+  completions: {},
+  screen: 'home',
+  detailId: null,
+  monthOffset: 0,
+  modal: null,
+  menuOpen: false,
+  confirmDelete: null,
+  theme: 'midnight'
+};
+
+function load() {
+  try {
+    // Try new format first, then migrate from old
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) raw = localStorage.getItem('tracker_v3');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state.activities = (saved.activities || []).map(a => ({
+        ...a,
+        dailyTarget: a.dailyTarget || 1
+      }));
+      // Migrate completions: convert true → 1
+      const comp = saved.completions || {};
+      for (const actId in comp) {
+        for (const key in comp[actId]) {
+          if (comp[actId][key] === true) comp[actId][key] = 1;
+        }
+      }
+      state.completions = comp;
+      if (saved.theme) state.theme = saved.theme;
+    }
+  } catch(e) {}
+  applyTheme(state.theme);
+}
+
+function applyTheme(themeId) {
+  document.documentElement.setAttribute('data-theme', themeId);
+  // Update status bar for light themes
+  const meta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (meta) {
+    const isLight = themeId === 'dawn' || themeId === 'lavender';
+    meta.content = isLight ? 'default' : 'black-translucent';
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    activities: state.activities,
+    completions: state.completions,
+    theme: state.theme
+  }));
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+// ── Date helpers ────────────────────
+function getToday() {
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+
+function dKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function getSunday(d) {
+  const date = new Date(d);
+  date.setDate(date.getDate() - date.getDay());
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function currentWeekDates() {
+  const sun = getSunday(new Date());
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(sun); d.setDate(d.getDate() + i); return d;
+  });
+}
+
+function getCount(actId, date) {
+  const comp = state.completions[actId];
+  if (!comp) return 0;
+  return comp[dKey(date)] || 0;
+}
+
+function getDailyTarget(actId) {
+  const act = state.activities.find(a => a.id === actId);
+  return act ? act.dailyTarget : 1;
+}
+
+function weekDaysMet(actId) {
+  const comp = state.completions[actId] || {};
+  const target = getDailyTarget(actId);
+  return currentWeekDates().filter(d => (comp[dKey(d)] || 0) >= target).length;
+}
+
+function incrementCompletion(actId, date) {
+  if (!state.completions[actId]) state.completions[actId] = {};
+  const key = dKey(date);
+  const current = state.completions[actId][key] || 0;
+  const target = getDailyTarget(actId);
+  const next = current >= target ? 0 : current + 1;
+  if (next === 0) delete state.completions[actId][key];
+  else state.completions[actId][key] = next;
+  save();
+  return next;
+}
+
+// ── DOM helper ──────────────────────
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'className') el.className = v;
+      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+      else el.setAttribute(k, v);
+    }
+  }
+  for (const c of children) {
+    if (c == null || c === false) continue;
+    if (typeof c === 'string' || typeof c === 'number') el.appendChild(document.createTextNode(c));
+    else if (Array.isArray(c)) c.forEach(x => x && el.appendChild(x));
+    else el.appendChild(c);
+  }
+  return el;
+}
+
+// ── Render ──────────────────────────
+const $ = document.getElementById('app');
+
+function render(anim) {
+  $.innerHTML = '';
+  if (state.screen === 'home') $.appendChild(renderHome(anim));
+  else if (state.screen === 'detail') $.appendChild(renderDetail(anim));
+  else if (state.screen === 'settings') $.appendChild(renderSettings(anim));
+  if (state.modal) $.appendChild(renderModal());
+}
+
+// ── Drag to reorder ─────────────────
+let drag = {
+  active: false,
+  timer: null,
+  actId: null,
+  cardEl: null,
+  placeholder: null,
+  list: null,
+  startY: 0,
+  lastY: 0,
+  cardStartTop: 0,
+  moved: false
+};
+
+// Prevent iOS context menu on long press
+document.addEventListener('contextmenu', function(e) {
+  if (drag.timer || drag.active) e.preventDefault();
+});
+
+function startDragWatch(card, actId, touchY) {
+  cancelDragWatch();
+  drag.startY = touchY;
+  drag.lastY = touchY;
+  drag.moved = false;
+
+  drag.timer = setTimeout(function() {
+    var rect = card.getBoundingClientRect();
+    drag.active = true;
+    drag.actId = actId;
+    drag.cardEl = card;
+    drag.list = card.parentElement;
+    drag.startY = drag.lastY;
+    drag.cardStartTop = rect.top;
+
+    // Create placeholder with same height
+    drag.placeholder = document.createElement('div');
+    drag.placeholder.className = 'drag-placeholder';
+    drag.placeholder.style.height = rect.height + 'px';
+    drag.placeholder.dataset.actId = actId;
+
+    // Pull card out of flow into fixed position
+    card.parentElement.insertBefore(drag.placeholder, card);
+    card.classList.add('dragging');
+    card.style.top = rect.top + 'px';
+    card.style.width = '';
+
+    // Move card to body so it floats above everything
+    document.body.appendChild(card);
+    document.body.classList.add('drag-active');
+
+    if (navigator.vibrate) navigator.vibrate(30);
+  }, 400);
+}
+
+function cancelDragWatch() {
+  if (drag.timer) {
+    clearTimeout(drag.timer);
+    drag.timer = null;
+  }
+}
+
+function handleDragMove(touchY) {
+  drag.lastY = touchY;
+
+  if (!drag.active) {
+    if (drag.timer && Math.abs(touchY - drag.startY) > 10) {
+      cancelDragWatch();
+    }
+    return false;
+  }
+
+  var dy = touchY - drag.startY;
+  drag.cardEl.style.top = (drag.cardStartTop + dy) + 'px';
+  drag.moved = true;
+
+  // Check if we should swap the placeholder with a sibling
+  var children = Array.from(drag.list.children);
+  for (var i = 0; i < children.length; i++) {
+    var c = children[i];
+    if (c === drag.placeholder) continue;
+    var rect = c.getBoundingClientRect();
+    var mid = rect.top + rect.height / 2;
+    var placeholderIdx = children.indexOf(drag.placeholder);
+    var targetIdx = i;
+
+    if (touchY < mid && targetIdx < placeholderIdx) {
+      drag.list.insertBefore(drag.placeholder, c);
+      break;
+    } else if (touchY > mid && targetIdx > placeholderIdx) {
+      drag.list.insertBefore(drag.placeholder, c.nextSibling);
+      break;
+    }
+  }
+  return true;
+}
+
+function finishDrag() {
+  cancelDragWatch();
+  if (!drag.active) return;
+
+  // Put card back into the list where the placeholder is
+  drag.cardEl.classList.remove('dragging');
+  drag.cardEl.style.top = '';
+  drag.list.insertBefore(drag.cardEl, drag.placeholder);
+  drag.placeholder.remove();
+  document.body.classList.remove('drag-active');
+
+  // Read new order from DOM
+  var newOrder = Array.from(drag.list.querySelectorAll('.activity-card')).map(function(c) {
+    return c.dataset.actId;
+  });
+  var reordered = newOrder.map(function(id) {
+    return state.activities.find(function(a) { return a.id === id; });
+  }).filter(Boolean);
+  if (reordered.length === state.activities.length) {
+    state.activities = reordered;
+    save();
+  }
+  drag.active = false;
+}
+
+// Touch events
+document.addEventListener('touchmove', function(e) {
+  if (drag.active) {
+    e.preventDefault();
+    handleDragMove(e.touches[0].clientY);
+  } else if (drag.timer) {
+    drag.lastY = e.touches[0].clientY;
+    if (Math.abs(e.touches[0].clientY - drag.startY) > 10) {
+      cancelDragWatch();
+    }
+  }
+}, {passive: false});
+
+document.addEventListener('touchend', function() {
+  if (drag.active) finishDrag();
+  else cancelDragWatch();
+});
+
+document.addEventListener('touchcancel', function() {
+  if (drag.active) finishDrag();
+  else cancelDragWatch();
+});
+
+// Mouse events (for desktop)
+document.addEventListener('mousemove', function(e) {
+  if (drag.active) {
+    e.preventDefault();
+    handleDragMove(e.clientY);
+  } else if (drag.timer) {
+    drag.lastY = e.clientY;
+    if (Math.abs(e.clientY - drag.startY) > 10) {
+      cancelDragWatch();
+    }
+  }
+});
+
+document.addEventListener('mouseup', function() {
+  if (drag.active) finishDrag();
+  else cancelDragWatch();
+});
+
+// ── Home Screen ─────────────────────
+function renderHome(anim) {
+  const wrap = h('div', anim ? {className: anim} : null);
+  const today = getToday();
+  const todayDayIndex = today.getDay();
+  const weekDates = currentWeekDates();
+
+  const headerRight = h('div', {style:{display:'flex', gap:'8px'}});
+  headerRight.appendChild(h('button', {className:'icon-btn', style:{fontSize:'18px'}, onClick: () => {
+    state.screen = 'settings';
+    render('screen-enter');
+  }}, '\u2699'));
+  headerRight.appendChild(h('button', {className:'icon-btn', onClick: () => {
+    state.modal = {mode:'add'};
+    render();
+  }}, '+'));
+  wrap.appendChild(h('div', {className:'header'},
+    h('h1', null, 'Tracker'),
+    headerRight
+  ));
+
+  if (state.activities.length === 0) {
+    wrap.appendChild(h('div', {className:'empty'},
+      h('h3', null, 'No activities yet'),
+      h('p', null, 'Tap + to add something you want to track')
+    ));
+    return wrap;
+  }
+
+  const list = h('div', {className:'activity-list'});
+
+  state.activities.forEach(act => {
+    const daysMet = weekDaysMet(act.id);
+    const met = daysMet >= act.goal;
+
+    const card = h('div', {className:'activity-card', 'data-act-id': act.id});
+
+    // Top row → navigates to detail (but not during drag)
+    const top = h('div', {className:'activity-card-top', onClick: () => {
+      if (drag.moved) return;
+      state.screen = 'detail';
+      state.detailId = act.id;
+      state.monthOffset = 0;
+      state.menuOpen = false;
+      render('screen-enter');
+    }});
+    top.appendChild(h('div', {style:{display:'flex', alignItems:'center', gap:'10px', minWidth:'0', flex:'1'}},
+      h('span', {className:'activity-name'}, act.name),
+      h('span', {className:'activity-goal-badge' + (met ? ' met' : ''), 'data-badge': act.id},
+        daysMet + '/' + act.goal
+      )
+    ));
+    top.appendChild(h('span', {className:'activity-arrow'}, '›'));
+
+    // Long-press to initiate drag (touch + mouse)
+    top.addEventListener('touchstart', function(e) {
+      startDragWatch(card, act.id, e.touches[0].clientY);
+    }, {passive: true});
+    top.addEventListener('touchend', function() {
+      if (!drag.active) cancelDragWatch();
+    });
+    top.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      startDragWatch(card, act.id, e.clientY);
+    });
+    top.addEventListener('mouseup', function() {
+      if (!drag.active) cancelDragWatch();
+    });
+
+    card.appendChild(top);
+
+    // Bottom row: toggleable circles
+    const row = h('div', {className:'circles-row'});
+    weekDates.forEach((date, i) => {
+      const count = getCount(act.id, date);
+      const isFuture = date > today;
+      const isMet = count >= act.dailyTarget;
+      const isPartial = count > 0 && count < act.dailyTarget;
+
+      const col = h('div', {className:'circle-day'});
+      col.appendChild(h('span', {
+        className: 'circle-label' + (i === todayDayIndex ? ' is-today' : '')
+      }, DAYS[i]));
+
+      const circleClass = 'circle' + (isMet ? ' checked' : '') + (isPartial ? ' partial' : '') + (isFuture ? ' future' : '');
+      const btn = h('button', {className: circleClass}, count > 0 ? String(count) : '');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isFuture || drag.active) return;
+        const newCount = incrementCompletion(act.id, date);
+        const newMet = newCount >= act.dailyTarget;
+        const newPartial = newCount > 0 && newCount < act.dailyTarget;
+        btn.className = 'circle' + (newMet ? ' checked' : '') + (newPartial ? ' partial' : '') + (isFuture ? ' future' : '');
+        btn.textContent = newCount > 0 ? String(newCount) : '';
+        // Update badge
+        const newDaysMet = weekDaysMet(act.id);
+        const badgeMet = newDaysMet >= act.goal;
+        const badge = card.querySelector('[data-badge="' + act.id + '"]');
+        if (badge) {
+          badge.textContent = newDaysMet + '/' + act.goal;
+          badge.className = 'activity-goal-badge' + (badgeMet ? ' met' : '');
+        }
+      });
+      col.appendChild(btn);
+      row.appendChild(col);
+    });
+    card.appendChild(row);
+    list.appendChild(card);
+  });
+
+  wrap.appendChild(list);
+  return wrap;
+}
+
+// ── Detail Screen ───────────────────
+function renderDetail(anim) {
+  const wrap = h('div', anim ? {className: anim} : null);
+  const act = state.activities.find(a => a.id === state.detailId);
+  if (!act) { state.screen = 'home'; return renderHome(anim); }
+
+  const today = getToday();
+  const comp = state.completions[act.id] || {};
+
+  // Header: back + hamburger
+  const header = h('div', {className:'detail-header'});
+  header.appendChild(h('button', {className:'back-btn', onClick: () => {
+    state.screen = 'home';
+    state.menuOpen = false;
+    render('screen-back');
+  }}, '‹ Back'));
+
+  const menuWrap = h('div', {className:'menu-wrap'});
+  menuWrap.appendChild(h('button', {className:'hamburger-btn', onClick: (e) => {
+    e.stopPropagation();
+    state.menuOpen = !state.menuOpen;
+    renderMenu();
+  }}, '•••'));
+
+  header.appendChild(menuWrap);
+  wrap.appendChild(header);
+
+  // Title + subtitle
+  wrap.appendChild(h('div', {className:'detail-title'}, act.name));
+
+  const thisWeekDays = weekDaysMet(act.id);
+  const metThisWeek = thisWeekDays >= act.goal;
+  const subtitle = h('div', {className:'detail-subtitle'});
+  const goalText = act.goal + 'x per week' + (act.dailyTarget > 1 ? ' &middot; ' + act.dailyTarget + 'x per day' : '');
+  subtitle.innerHTML = goalText + ' &middot; This week: <span class="' + (metThisWeek ? 'met' : '') + '">' + thisWeekDays + '/' + act.goal + '</span>';
+  wrap.appendChild(subtitle);
+
+  // Month calendar
+  const now = new Date();
+  now.setMonth(now.getMonth() + state.monthOffset);
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const dim = new Date(year, month+1, 0).getDate();
+  const startDay = new Date(year, month, 1).getDay();
+  const monthName = now.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+
+  // Disable forward nav if at current month or future
+  const isCurrentOrFuture = state.monthOffset >= 0;
+  wrap.appendChild(h('div', {className:'month-nav'},
+    h('button', {className:'nav-btn', onClick: () => { state.monthOffset--; render(); }}, '‹'),
+    h('span', null, monthName),
+    h('button', {className:'nav-btn' + (isCurrentOrFuture ? ' disabled' : ''), onClick: () => {
+      if (isCurrentOrFuture) return;
+      state.monthOffset++;
+      render();
+    }}, '›')
+  ));
+
+  const labels = h('div', {className:'cal-day-labels'});
+  DAYS.forEach(d => labels.appendChild(h('span', null, d)));
+  wrap.appendChild(labels);
+
+  let monthDaysMet = 0;
+
+  const grid = h('div', {className:'cal-grid'});
+
+  for (let i = 0; i < startDay; i++) {
+    grid.appendChild(h('button', {className:'cal-cell empty', disabled: true}));
+  }
+
+  for (let d = 1; d <= dim; d++) {
+    const date = new Date(year, month, d);
+    const key = dKey(date);
+    const count = comp[key] || 0;
+    const isMet = count >= act.dailyTarget;
+    const isPartial = count > 0 && count < act.dailyTarget;
+    const isToday = dKey(date) === dKey(today);
+    const isFuture = date > today;
+    if (isMet) monthDaysMet++;
+
+    const cellClass = 'cal-cell' + (isMet ? ' checked' : '') + (isPartial ? ' partial' : '') + (isToday ? ' today' : '') + (isFuture ? ' future' : '');
+    const cell = h('button', {className: cellClass}, String(d));
+    cell.addEventListener('click', () => {
+      if (isFuture) return;
+      const newCount = incrementCompletion(act.id, date);
+      const newMet = newCount >= act.dailyTarget;
+      const newPartial = newCount > 0 && newCount < act.dailyTarget;
+      cell.className = 'cal-cell' + (newMet ? ' checked' : '') + (newPartial ? ' partial' : '') + (isToday ? ' today' : '') + (isFuture ? ' future' : '');
+      // Recount stats
+      const newComp = state.completions[act.id] || {};
+      let newDaysMet = 0;
+      for (let dd = 1; dd <= dim; dd++) {
+        const dt = new Date(year, month, dd);
+        if ((newComp[dKey(dt)] || 0) >= act.dailyTarget) newDaysMet++;
+      }
+      const wks = Math.ceil(dim / 7);
+      const av = (newDaysMet / wks).toFixed(1);
+      const statVal = statsEl.querySelectorAll('.cal-stat-value');
+      if (statVal[0]) statVal[0].textContent = newDaysMet;
+      if (statVal[1]) statVal[1].textContent = av;
+    });
+
+    grid.appendChild(cell);
+  }
+  wrap.appendChild(grid);
+
+  const weeksInMonth = Math.ceil(dim / 7);
+  const avg = (monthDaysMet / weeksInMonth).toFixed(1);
+
+  const statsEl = h('div', {className:'cal-stats'});
+  statsEl.appendChild(h('div', {className:'cal-stat'},
+    h('div', {className:'cal-stat-value'}, String(monthDaysMet)),
+    h('div', {className:'cal-stat-label'}, 'Days met this month')
+  ));
+  statsEl.appendChild(h('div', {className:'cal-stat'},
+    h('div', {className:'cal-stat-value'}, avg),
+    h('div', {className:'cal-stat-label'}, 'Avg per week')
+  ));
+  statsEl.appendChild(h('div', {className:'cal-stat'},
+    h('div', {className:'cal-stat-value'}, String(act.goal) + 'x'),
+    h('div', {className:'cal-stat-label'}, 'Weekly goal')
+  ));
+  wrap.appendChild(statsEl);
+
+  return wrap;
+}
+
+// ── Settings Screen ─────────────────
+function renderSettings(anim) {
+  const wrap = h('div', anim ? {className: anim} : null);
+
+  wrap.appendChild(h('div', {className:'detail-header'},
+    h('button', {className:'back-btn', onClick: () => {
+      state.screen = 'home';
+      render('screen-back');
+    }}, '‹ Back'),
+    h('div')
+  ));
+
+  wrap.appendChild(h('div', {className:'detail-title'}, 'Settings'));
+
+  wrap.appendChild(h('div', {className:'section-label', style:{marginTop:'16px', marginBottom:'4px'}}, 'Theme'));
+
+  const list = h('div', {className:'theme-list'});
+
+  THEMES.forEach(theme => {
+    const isActive = state.theme === theme.id;
+    const btn = h('button', {
+      className: 'theme-option' + (isActive ? ' active' : ''),
+      onClick: () => {
+        state.theme = theme.id;
+        applyTheme(theme.id);
+        save();
+        render();
+      }
+    });
+
+    // Color swatch
+    const swatch = h('div', {className: 'theme-swatch'});
+    swatch.appendChild(h('div', {className:'theme-swatch-half', style:{background: theme.bg}}));
+    swatch.appendChild(h('div', {className:'theme-swatch-half', style:{background: theme.accent}}));
+    btn.appendChild(swatch);
+
+    // Name + description
+    const info = h('div', {className:'theme-info'});
+    info.appendChild(h('div', {className:'theme-name'}, theme.name));
+    info.appendChild(h('div', {className:'theme-desc'}, theme.desc));
+    btn.appendChild(info);
+
+    // Checkmark if active
+    if (isActive) {
+      btn.appendChild(h('span', {style:{color:'var(--accent)', fontSize:'18px', fontWeight:'700'}}, '✓'));
+    }
+
+    list.appendChild(btn);
+  });
+
+  wrap.appendChild(list);
+  return wrap;
+}
+
+// ── Dropdown menu (rendered outside the animated wrapper) ──
+function renderMenu() {
+  // Remove any existing menu
+  const existing = document.getElementById('dropdown-layer');
+  if (existing) existing.remove();
+
+  if (!state.menuOpen) return;
+
+  const act = state.activities.find(a => a.id === state.detailId);
+  if (!act) return;
+
+  const layer = h('div', {id:'dropdown-layer'});
+
+  // Invisible backdrop
+  layer.appendChild(h('div', {className:'dropdown-overlay', onClick: () => {
+    state.menuOpen = false;
+    renderMenu();
+  }}));
+
+  // Dropdown
+  const dropdown = h('div', {className:'dropdown-menu'});
+  dropdown.appendChild(h('button', {className:'dropdown-item', onClick: () => {
+    state.menuOpen = false;
+    renderMenu();
+    state.modal = {mode:'edit', activity: act};
+    render();
+  }}, 'Edit'));
+  dropdown.appendChild(h('button', {className:'dropdown-item danger', onClick: () => {
+    state.menuOpen = false;
+    renderMenu();
+    state.confirmDelete = {activityId: act.id, activityName: act.name};
+    renderConfirm();
+  }}, 'Delete'));
+
+  layer.appendChild(dropdown);
+  document.body.appendChild(layer);
+}
+
+// ── Confirm delete modal ──
+function renderConfirm() {
+  const existing = document.getElementById('confirm-layer');
+  if (existing) existing.remove();
+
+  if (!state.confirmDelete) return;
+
+  const overlay = h('div', {id:'confirm-layer', className:'confirm-overlay', onClick: (e) => {
+    if (e.target === overlay) {
+      state.confirmDelete = null;
+      overlay.remove();
+    }
+  }});
+
+  const box = h('div', {className:'confirm-box'});
+  box.appendChild(h('h3', null, 'Delete Activity?'));
+  box.appendChild(h('p', null, '"' + state.confirmDelete.activityName + '" and all its history will be permanently deleted.'));
+
+  const btns = h('div', {className:'confirm-btns'});
+  btns.appendChild(h('button', {className:'btn btn-secondary', onClick: () => {
+    state.confirmDelete = null;
+    overlay.remove();
+  }}, 'Cancel'));
+  btns.appendChild(h('button', {className:'btn btn-primary', style:{background:'var(--danger)'}, onClick: () => {
+    const id = state.confirmDelete.activityId;
+    state.activities = state.activities.filter(a => a.id !== id);
+    delete state.completions[id];
+    state.confirmDelete = null;
+    state.screen = 'home';
+    overlay.remove();
+    save();
+    render('screen-back');
+  }}, 'Delete'));
+  box.appendChild(btns);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+// ── Modal ───────────────────────────
+function renderModal() {
+  const m = state.modal;
+  const isEdit = m.mode === 'edit';
+  const act = m.activity;
+
+  const overlay = h('div', {className:'modal-overlay', onClick: (e) => {
+    if (e.target === overlay) { state.modal = null; render(); }
+  }});
+
+  const modal = h('div', {className:'modal'});
+  modal.appendChild(h('h2', null, isEdit ? 'Edit Activity' : 'New Activity'));
+
+  modal.appendChild(h('label', {className:'field-label'}, 'Activity Name'));
+  const nameInput = h('input', {
+    className:'field-input', type:'text',
+    placeholder:'e.g. Kettlebell Workout',
+    value: isEdit ? act.name : ''
+  });
+  modal.appendChild(nameInput);
+
+  modal.appendChild(h('label', {className:'field-label'}, 'Days per Week'));
+  const goalSelect = h('select', {className:'field-input'});
+  [1,2,3,4,5,6,7].forEach(n => {
+    const opt = h('option', {value: n}, n + ' day' + (n > 1 ? 's' : '') + ' per week');
+    if (isEdit && act.goal === n) opt.selected = true;
+    else if (!isEdit && n === 3) opt.selected = true;
+    goalSelect.appendChild(opt);
+  });
+  modal.appendChild(goalSelect);
+
+  modal.appendChild(h('label', {className:'field-label'}, 'Times per Day'));
+  const dailySelect = h('select', {className:'field-input'});
+  [1,2,3,4,5,6,7,8,9,10].forEach(n => {
+    const opt = h('option', {value: n}, n + ' time' + (n > 1 ? 's' : '') + ' per day');
+    if (isEdit && act.dailyTarget === n) opt.selected = true;
+    else if (!isEdit && n === 1) opt.selected = true;
+    dailySelect.appendChild(opt);
+  });
+  modal.appendChild(dailySelect);
+
+  const btns = h('div', {className:'modal-btns'});
+  btns.appendChild(h('button', {className:'btn btn-secondary', onClick: () => {
+    state.modal = null; render();
+  }}, 'Cancel'));
+  btns.appendChild(h('button', {className:'btn btn-primary', onClick: () => {
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    const goal = parseInt(goalSelect.value);
+    const dailyTarget = parseInt(dailySelect.value);
+    if (isEdit) {
+      const found = state.activities.find(a => a.id === act.id);
+      if (found) { found.name = name; found.goal = goal; found.dailyTarget = dailyTarget; }
+    } else {
+      state.activities.push({id: genId(), name, goal, dailyTarget, createdAt: Date.now()});
+    }
+    state.modal = null;
+    save(); render();
+  }}, isEdit ? 'Save' : 'Add'));
+  modal.appendChild(btns);
+
+  overlay.appendChild(modal);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+  });
+  setTimeout(() => nameInput.focus(), 300);
+  return overlay;
+}
+
+// ── Init ────────────────────────────
+load();
+render();
+</script>
+</body>
+</html>

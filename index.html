@@ -589,6 +589,84 @@ body.drag-active {
   letter-spacing: 0.5px;
 }
 
+/* Sync UI */
+.sync-section {
+  margin-top: 28px;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text2);
+}
+.sync-status .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sync-status .dot.connected { background: var(--accent); }
+.sync-status .dot.disconnected { background: var(--text3); }
+
+.sync-token-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  font-family: monospace;
+  margin-top: 10px;
+  outline: none;
+  -webkit-appearance: none;
+}
+.sync-token-input:focus { border-color: var(--accent); }
+.sync-token-input::placeholder { color: var(--text3); }
+
+.sync-help {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.sync-help a { color: var(--accent); }
+
+.sync-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.sync-btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s;
+}
+.sync-btn:active { transform: scale(0.97); }
+.sync-btn.primary {
+  background: var(--accent);
+  color: #0a0a0a;
+  border: none;
+}
+.sync-btn.danger {
+  color: var(--danger);
+  border-color: var(--danger-dim);
+}
+
 /* Screen transitions — only on navigate, not toggles */
 .screen-enter { animation: slideIn 0.2s ease; }
 @keyframes slideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
@@ -665,7 +743,130 @@ function save() {
     completions: state.completions,
     theme: state.theme
   }));
+  queueSync();
 }
+
+// ── Cloud Sync (GitHub Gist) ────────
+const SYNC_KEY = 'tracker_sync';
+
+function loadSyncConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(SYNC_KEY)) || {};
+  } catch(e) { return {}; }
+}
+
+function saveSyncConfig(config) {
+  localStorage.setItem(SYNC_KEY, JSON.stringify(config));
+}
+
+function getAppData() {
+  return {
+    activities: state.activities,
+    completions: state.completions,
+    theme: state.theme,
+    updatedAt: Date.now()
+  };
+}
+
+function applyAppData(data) {
+  state.activities = (data.activities || []).map(a => ({
+    ...a,
+    dailyTarget: a.dailyTarget || 1
+  }));
+  const comp = data.completions || {};
+  for (const actId in comp) {
+    for (const key in comp[actId]) {
+      if (comp[actId][key] === true) comp[actId][key] = 1;
+    }
+  }
+  state.completions = comp;
+  if (data.theme) {
+    state.theme = data.theme;
+    applyTheme(data.theme);
+  }
+  save();
+}
+
+async function syncToGist() {
+  const config = loadSyncConfig();
+  if (!config.token) throw new Error('No token configured');
+
+  const content = JSON.stringify(getAppData(), null, 2);
+
+  if (config.gistId) {
+    // Update existing gist
+    const res = await fetch('https://api.github.com/gists/' + config.gistId, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + config.token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        files: { 'tracker-data.json': { content: content } }
+      })
+    });
+    if (!res.ok) {
+      if (res.status === 404) {
+        // Gist was deleted, create a new one
+        config.gistId = null;
+        saveSyncConfig(config);
+        return syncToGist();
+      }
+      throw new Error('Sync failed: ' + res.status);
+    }
+    return true;
+  } else {
+    // Create new gist
+    const res = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + config.token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        description: 'Tracker App Data',
+        public: false,
+        files: { 'tracker-data.json': { content: content } }
+      })
+    });
+    if (!res.ok) throw new Error('Failed to create gist: ' + res.status);
+    const gist = await res.json();
+    config.gistId = gist.id;
+    saveSyncConfig(config);
+    return true;
+  }
+}
+
+async function syncFromGist() {
+  const config = loadSyncConfig();
+  if (!config.token || !config.gistId) return false;
+
+  const res = await fetch('https://api.github.com/gists/' + config.gistId, {
+    headers: { 'Authorization': 'Bearer ' + config.token }
+  });
+  if (!res.ok) throw new Error('Failed to fetch gist: ' + res.status);
+  const gist = await res.json();
+  const file = gist.files['tracker-data.json'];
+  if (!file) throw new Error('No data file found in gist');
+
+  const data = JSON.parse(file.content);
+  applyAppData(data);
+  return true;
+}
+
+// Debounced auto-sync: waits 2 seconds after last change before syncing
+let syncTimer = null;
+function queueSync() {
+  const config = loadSyncConfig();
+  if (!config.token) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => {
+    syncToGist().catch(e => console.warn('Auto-sync failed:', e));
+  }, 2000);
+}
+
+// Patch save to auto-sync
+const _origSave = save;
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -1208,6 +1409,108 @@ function renderSettings(anim) {
   });
 
   wrap.appendChild(list);
+
+  // ── Cloud Sync section ──
+  const config = loadSyncConfig();
+  const isConnected = !!(config.token && config.gistId);
+
+  const syncSection = h('div', {className:'sync-section'});
+  syncSection.appendChild(h('div', {className:'section-label'}, 'Cloud Sync'));
+
+  if (isConnected) {
+    // Connected state
+    const status = h('div', {className:'sync-status'});
+    status.appendChild(h('div', {className:'dot connected'}));
+    status.appendChild(h('span', null, 'Connected to GitHub Gist'));
+    syncSection.appendChild(status);
+
+    const btns = h('div', {className:'sync-btns'});
+
+    const syncNowBtn = h('button', {className:'sync-btn primary'}, 'Sync Now');
+    syncNowBtn.addEventListener('click', async () => {
+      syncNowBtn.textContent = 'Syncing...';
+      syncNowBtn.disabled = true;
+      try {
+        await syncToGist();
+        syncNowBtn.textContent = 'Synced ✓';
+        setTimeout(() => { syncNowBtn.textContent = 'Sync Now'; syncNowBtn.disabled = false; }, 1500);
+      } catch(e) {
+        syncNowBtn.textContent = 'Failed';
+        setTimeout(() => { syncNowBtn.textContent = 'Sync Now'; syncNowBtn.disabled = false; }, 1500);
+      }
+    });
+    btns.appendChild(syncNowBtn);
+
+    const pullBtn = h('button', {className:'sync-btn'}, 'Pull from Cloud');
+    pullBtn.addEventListener('click', async () => {
+      pullBtn.textContent = 'Pulling...';
+      pullBtn.disabled = true;
+      try {
+        await syncFromGist();
+        pullBtn.textContent = 'Done ✓';
+        setTimeout(() => { render(); }, 800);
+      } catch(e) {
+        pullBtn.textContent = 'Failed';
+        setTimeout(() => { pullBtn.textContent = 'Pull from Cloud'; pullBtn.disabled = false; }, 1500);
+      }
+    });
+    btns.appendChild(pullBtn);
+    syncSection.appendChild(btns);
+
+    // Disconnect button
+    const disconnectBtns = h('div', {className:'sync-btns'});
+    const disconnectBtn = h('button', {className:'sync-btn danger'}, 'Disconnect');
+    disconnectBtn.addEventListener('click', () => {
+      saveSyncConfig({});
+      render();
+    });
+    disconnectBtns.appendChild(disconnectBtn);
+    syncSection.appendChild(disconnectBtns);
+
+  } else {
+    // Setup state
+    const tokenInput = h('input', {
+      className: 'sync-token-input',
+      type: 'password',
+      placeholder: 'ghp_xxxxxxxxxxxx',
+      value: config.token || ''
+    });
+    syncSection.appendChild(tokenInput);
+
+    const help = h('div', {className:'sync-help'});
+    help.innerHTML = 'Paste a GitHub personal access token with <strong>gist</strong> permission. <a href="https://github.com/settings/tokens/new?scopes=gist&description=Tracker%20App" target="_blank">Create one here →</a>';
+    syncSection.appendChild(help);
+
+    const btns = h('div', {className:'sync-btns'});
+    const connectBtn = h('button', {className:'sync-btn primary'}, 'Connect');
+    connectBtn.addEventListener('click', async () => {
+      const token = tokenInput.value.trim();
+      if (!token) { tokenInput.focus(); return; }
+
+      connectBtn.textContent = 'Connecting...';
+      connectBtn.disabled = true;
+
+      // Test the token
+      try {
+        const res = await fetch('https://api.github.com/user', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Invalid token');
+
+        saveSyncConfig({ token: token, gistId: config.gistId || null });
+        await syncToGist();
+        render();
+      } catch(e) {
+        connectBtn.textContent = 'Invalid token';
+        setTimeout(() => { connectBtn.textContent = 'Connect'; connectBtn.disabled = false; }, 2000);
+      }
+    });
+    btns.appendChild(connectBtn);
+    syncSection.appendChild(btns);
+  }
+
+  wrap.appendChild(syncSection);
+
   return wrap;
 }
 
@@ -1360,6 +1663,19 @@ function renderModal() {
 // ── Init ────────────────────────────
 load();
 render();
+
+// Auto-pull from cloud on load if connected
+(async () => {
+  const config = loadSyncConfig();
+  if (config.token && config.gistId) {
+    try {
+      await syncFromGist();
+      render();
+    } catch(e) {
+      console.warn('Auto-pull failed:', e);
+    }
+  }
+})();
 </script>
 </body>
 </html>
